@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ : le fond suit la couleur d'accent Material You de l'utilisateur -->
+    <color name="ic_launcher_background">@android:color/system_accent1_300</color>
+</resources>

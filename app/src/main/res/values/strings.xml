@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">APKforge</string>
+
+    <!-- Theme Material3 ; les couleurs viennent dynamiquement (Material You)
+         depuis le code, ce theme ne fixe que les bases pour le splash. -->
+    <style name="Theme.Forge" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

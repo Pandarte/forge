@@ -1,0 +1,513 @@
+package fr.buildtool.app
+
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BuildScreen(vm: BuildViewModel = viewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
+    val scroll = rememberScrollState()
+
+    // auto-scroll des logs vers le bas quand ils grandissent
+    LaunchedEffect(state.logLines.size) {
+        if (state.logLines.isNotEmpty()) scroll.animateScrollTo(scroll.maxValue)
+    }
+
+    Scaffold(
+        topBar = {
+            LargeTopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Bolt, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("APKforge", style = MaterialTheme.typography.headlineMedium)
+                    }
+                },
+            )
+        }
+    ) { pad ->
+        Column(
+            Modifier
+                .padding(pad)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ServerBanner(state, onSetup = vm::runSetup, onRetry = vm::checkServer)
+
+            // --- Saisie URL ---
+            OutlinedTextField(
+                value = state.url,
+                onValueChange = vm::onUrlChange,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                label = { Text("URL du dépôt git") },
+                placeholder = { Text("https://github.com/utilisateur/projet") },
+                singleLine = true,
+                shape = RoundedCornerShape(18.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
+                enabled = state.phase != UiState.Phase.BUILDING &&
+                          state.phase != UiState.Phase.SETUP,
+            )
+
+            // --- Bouton principal ---
+            val busy = state.phase == UiState.Phase.BUILDING ||
+                       state.phase == UiState.Phase.SETUP
+            Button(
+                onClick = { if (busy) Unit else vm.startBuild() },
+                enabled = !busy && state.serverReachable == true &&
+                          state.chainReady && state.url.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                if (busy) {
+                    if (state.phase == UiState.Phase.BUILDING) {
+                        // Pendant la compilation : marteau qui frappe l'Android.
+                        ForgingHammer(
+                            size = 30.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("Compilation…")
+                    } else {
+                        // Pendant l'installation/téléchargement : spinner neutre.
+                        CircularProgressIndicator(
+                            Modifier.size(20.dp), strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Installation…")
+                    }
+                } else {
+                    Icon(Icons.Filled.Bolt, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Compiler", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+
+            // --- Bandeau de resultat ---
+            AnimatedVisibility(
+                visible = state.phase == UiState.Phase.DONE,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                ResultCard(
+                    status = state.buildStatus,
+                    apkUrl = state.apkReadyUrl,
+                    onInstall = { url ->
+                        ctx.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                    },
+                    onReset = vm::reset,
+                )
+            }
+
+            // --- Console de logs ---
+            LogConsole(
+                lines = state.logLines,
+                scroll = scroll,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServerBanner(
+    state: UiState,
+    onSetup: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    when {
+        state.serverReachable == null -> {
+            AssistChipRow("Connexion au serveur local…", null)
+        }
+        state.serverReachable == false -> {
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Serveur de build introuvable",
+                        style = MaterialTheme.typography.titleMedium)
+                    Text("Première fois ? Installe tout en un clic. Sinon, démarre " +
+                         "le serveur, puis réessaie.",
+                        style = MaterialTheme.typography.bodyMedium)
+                    SetupButtons()
+                    FilledTonalButton(onClick = onRetry) {
+                        Icon(Icons.Filled.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(8.dp)); Text("Réessayer")
+                    }
+                }
+            }
+        }
+        !state.chainReady -> {
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Première configuration",
+                        style = MaterialTheme.typography.titleMedium)
+                    Text("Le serveur répond, mais la chaîne de compilation n'est " +
+                         "pas installée. Lance l'installation (une seule fois).",
+                        style = MaterialTheme.typography.bodyMedium)
+                    Button(onClick = onSetup) {
+                        Icon(Icons.Filled.Bolt, contentDescription = null)
+                        Spacer(Modifier.width(8.dp)); Text("Installer la chaîne")
+                    }
+                }
+            }
+        }
+        else -> {
+            AssistChipRow("Prêt à compiler", Icons.Filled.CheckCircle)
+        }
+    }
+}
+
+@Composable
+private fun AssistChipRow(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector?) {
+    Row(verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 4.dp)) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(text, style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ResultCard(
+    status: String?,
+    apkUrl: String?,
+    onInstall: (String) -> Unit,
+    onReset: () -> Unit,
+) {
+    val success = status == "success"
+    val container = if (success)
+        MaterialTheme.colorScheme.primaryContainer
+    else MaterialTheme.colorScheme.errorContainer
+    val onContainer = if (success)
+        MaterialTheme.colorScheme.onPrimaryContainer
+    else MaterialTheme.colorScheme.onErrorContainer
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = container),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (success) Icons.Filled.CheckCircle else Icons.Filled.ErrorOutline,
+                    contentDescription = null, tint = onContainer)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (success) "Compilation réussie" else "Échec de la compilation",
+                    style = MaterialTheme.typography.titleMedium, color = onContainer)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (success && apkUrl != null) {
+                    Button(onClick = { onInstall(apkUrl) }) {
+                        Icon(Icons.Filled.Download, contentDescription = null)
+                        Spacer(Modifier.width(8.dp)); Text("Installer l'APK")
+                    }
+                }
+                FilledTonalButton(onClick = onReset) { Text("Nouveau build") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LogConsole(
+    lines: List<String>,
+    scroll: androidx.compose.foundation.ScrollState,
+    modifier: Modifier = Modifier,
+) {
+    val ctx = LocalContext.current
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 2.dp,
+    ) {
+        if (lines.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Les logs du build s'afficheront ici",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        } else {
+            Box(Modifier.fillMaxSize()) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scroll)
+                        .padding(14.dp),
+                ) {
+                    lines.forEach { line ->
+                        Text(
+                            line,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            color = colorForLine(line),
+                            softWrap = true,
+                            overflow = TextOverflow.Visible,
+                        )
+                    }
+                }
+                // Bouton copier : posé en haut à droite, par-dessus les logs.
+                FilledTonalIconButton(
+                    onClick = {
+                        val cm = ctx.getSystemService(ClipboardManager::class.java)
+                        cm?.setPrimaryClip(
+                            ClipData.newPlainText("logs Forge", lines.joinToString("\n")))
+                        Toast.makeText(ctx, "Logs copiés", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(36.dp),
+                ) {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = "Copier les logs",
+                        modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Deux boutons de configuration : install complete / demarrage rapide.
+ *  Chaque bouton copie le script correspondant et tente d'ouvrir Termux. */
+@Composable
+private fun SetupButtons() {
+    val ctx = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = {
+                val script = readAsset(ctx, "forge-install.sh")
+                copyToClipboard(ctx, "forge-install", script)
+                val msg = openTermux(ctx)
+                toast(ctx, "Script d'installation copié. $msg")
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.Bolt, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Première installation (tout configurer)")
+        }
+        FilledTonalButton(
+            onClick = {
+                val script = readAsset(ctx, "forge-start.sh")
+                copyToClipboard(ctx, "forge-start", script)
+                val msg = openTermux(ctx)
+                toast(ctx, "Script de démarrage copié. $msg")
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.Refresh, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Démarrer le serveur")
+        }
+        Text(
+            "Le script est copié dans le presse-papier. Dans Termux : appui long " +
+            "→ Coller → Entrée.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+@Composable
+private fun colorForLine(line: String): Color {
+    val l = line.lowercase()
+    return when {
+        "build successful" in l || "réussi" in l || "success" in l ->
+            MaterialTheme.colorScheme.primary
+        "error" in l || "failed" in l || "échec" in l || "erreur" in l ->
+            MaterialTheme.colorScheme.error
+        line.startsWith("$") || line.startsWith("===") ->
+            MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+}
+
+/**
+ * Animation du logo Forge en action : un marteau qui frappe en rythme une tête
+ * d'Android, qui rebondit (se compresse) à chaque impact. Dessinée au Canvas
+ * pour rester nette à toute taille et indépendante d'assets externes.
+ *
+ * Cycle (1 s) : le marteau remonte (armé), redescend, frappe, la tête encaisse,
+ * puis tout se relâche. RepeatMode.Restart pour un martèlement régulier.
+ */
+@Composable
+private fun ForgingHammer(
+    size: androidx.compose.ui.unit.Dp,
+    color: Color,
+) {
+    val transition = rememberInfiniteTransition(label = "forge")
+
+    // Angle de frappe du marteau. 0 = armé (relevé), 1 = abattu (impact).
+    // On anime un facteur 0..1 puis on le mappe sur des degrés, plus lisible
+    // que des angles bruts.
+    val swing by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                0f at 0 using LinearEasing          // armé, marteau relevé
+                0f at 200 using LinearEasing         // petite pause (armé)
+                1f at 380 using LinearEasing         // abattu : descente rapide
+                1f at 480 using LinearEasing         // maintien à l'impact
+                0f at 780 using LinearEasing         // remontée
+                0f at 1000 using LinearEasing
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "swing",
+    )
+
+    // Compression de la tête Android à l'impact (1 = normal, <1 = écrasée).
+    val squash by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                1f at 0
+                1f at 360
+                0.82f at 430 using LinearEasing      // encaisse le coup
+                1.05f at 560 using LinearEasing       // léger rebond
+                1f at 700 using LinearEasing
+                1f at 1000
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "squash",
+    )
+
+    Canvas(Modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val ink = color
+        val u = w / 100f   // unité relative (repère 0..100)
+
+        // --- tête d'Android (demi-dôme) en bas, qui se compresse verticalement ---
+        val headW = w * 0.60f
+        val headH = headW * 0.5f * squash
+        val headCx = w * 0.46f
+        val headBottom = h * 0.94f
+        val headLeft = headCx - headW / 2f
+        val headTop = headBottom - headH
+
+        drawArc(
+            color = ink,
+            startAngle = 180f,
+            sweepAngle = 180f,
+            useCenter = true,
+            topLeft = Offset(headLeft, headTop),
+            size = androidx.compose.ui.geometry.Size(headW, headH * 2f),
+        )
+        val eyeR = w * 0.035f
+        val eyeY = headTop + headH * 0.45f
+        drawCircle(Color.White, eyeR, Offset(headCx - headW * 0.18f, eyeY))
+        drawCircle(Color.White, eyeR, Offset(headCx + headW * 0.18f, eyeY))
+        drawLine(ink,
+            Offset(headCx - headW * 0.22f, headTop - headH * 0.15f),
+            Offset(headCx - headW * 0.34f, headTop - headH * 0.7f),
+            strokeWidth = w * 0.05f, cap = StrokeCap.Round)
+        drawLine(ink,
+            Offset(headCx + headW * 0.22f, headTop - headH * 0.15f),
+            Offset(headCx + headW * 0.34f, headTop - headH * 0.7f),
+            strokeWidth = w * 0.05f, cap = StrokeCap.Round)
+
+        // --- marteau ---
+        // Pivot = poignet, en haut à droite de la zone. Le marteau tourne autour
+        // de ce point unique. On mappe swing (0..1) sur l'angle de frappe :
+        //   armé   = -62°  (manche relevé vers le haut)
+        //   abattu = -4°   (tête juste au-dessus du crâne de l'Android)
+        val pivot = Offset(w * 0.74f, h * 0.30f)
+        val angle = -62f + swing * 58f   // -62° -> -4°
+
+        rotate(degrees = angle, pivot = pivot) {
+            // Dans ce bloc, tout est tracé dans le repère NON tourné puis pivoté
+            // d'un coup autour de `pivot`. On dessine donc le marteau "au repos"
+            // (manche horizontal partant du pivot vers la gauche), la rotation
+            // s'occupe de l'orientation.
+            val handleLen = w * 0.40f
+            val handleThick = w * 0.075f
+            // manche : du pivot vers la gauche
+            drawLine(
+                ink,
+                start = pivot,
+                end = Offset(pivot.x - handleLen, pivot.y),
+                strokeWidth = handleThick,
+                cap = StrokeCap.Round,
+            )
+            // tête du marteau : bloc perpendiculaire au bout du manche (à gauche)
+            val headCenter = Offset(pivot.x - handleLen, pivot.y)
+            val mhW = w * 0.16f   // épaisseur de la tête (le long du manche)
+            val mhH = w * 0.30f   // hauteur de la tête (perpendiculaire)
+            drawRoundRect(
+                color = ink,
+                topLeft = Offset(headCenter.x - mhW / 2f, headCenter.y - mhH / 2f),
+                size = androidx.compose.ui.geometry.Size(mhW, mhH),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f * u, 4f * u),
+            )
+        }
+    }
+}
