@@ -1,6 +1,54 @@
 <resources>
     <string name="app_name">APKforge</string>
 
+    <!-- Saisie -->
+    <string name="url_label">URL du dépôt git</string>
+    <string name="url_placeholder">https://github.com/utilisateur/projet</string>
+
+    <!-- Bouton principal -->
+    <string name="btn_compile">Compiler</string>
+    <string name="state_compiling">Compilation…</string>
+    <string name="state_installing">Installation…</string>
+
+    <!-- Bandeau serveur -->
+    <string name="server_connecting">Connexion au serveur local…</string>
+    <string name="server_not_found_title">Serveur de build introuvable</string>
+    <string name="server_not_found_body">Première fois ? Installe tout en un clic. Sinon, démarre le serveur, puis réessaie.</string>
+    <string name="btn_retry">Réessayer</string>
+    <string name="first_setup_title">Première configuration</string>
+    <string name="first_setup_body">Le serveur répond, mais la chaîne de compilation n\'est pas installée. Lance l\'installation (une seule fois).</string>
+    <string name="btn_install_chain">Installer la chaîne</string>
+    <string name="ready_to_compile">Prêt à compiler</string>
+
+    <!-- Carte de résultat -->
+    <string name="build_success">Compilation réussie</string>
+    <string name="build_failed">Échec de la compilation</string>
+    <string name="btn_install_apk">Installer l\'APK</string>
+    <string name="btn_new_build">Nouveau build</string>
+
+    <!-- Console de logs -->
+    <string name="logs_placeholder">Les logs du build s\'afficheront ici</string>
+    <string name="logs_clip_label">logs APKforge</string>
+    <string name="logs_copied">Logs copiés</string>
+    <string name="logs_copy_cd">Copier les logs</string>
+
+    <!-- Boutons de configuration -->
+    <string name="btn_first_install">Première installation (tout configurer)</string>
+    <string name="btn_start_server">Démarrer le serveur</string>
+    <string name="setup_clipboard_hint">Le script est copié dans le presse-papier. Dans Termux : appui long → Coller → Entrée.</string>
+    <string name="toast_install_copied">Script d\'installation copié. %1$s</string>
+    <string name="toast_start_copied">Script de démarrage copié. %1$s</string>
+
+    <!-- Termux -->
+    <string name="termux_not_installed">Termux n\'est pas installé. Installe-le depuis F-Droid, puis reviens.</string>
+    <string name="termux_opened">Termux ouvert. Colle le script (appui long → Coller) puis Entrée.</string>
+
+    <!-- Sélecteur de langue -->
+    <string name="language_cd">Langue</string>
+    <string name="language_system">Système</string>
+    <string name="language_french">Français</string>
+    <string name="language_english">English</string>
+
     <!-- Theme Material3 ; les couleurs viennent dynamiquement (Material You)
          depuis le code, ce theme ne fixe que les bases pour le splash. -->
     <style name="Theme.Forge" parent="android:Theme.Material.NoActionBar">

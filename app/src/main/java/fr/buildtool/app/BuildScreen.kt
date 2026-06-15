@@ -28,10 +28,14 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -76,6 +80,7 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                         Text("APKforge", style = MaterialTheme.typography.headlineMedium)
                     }
                 },
+                actions = { LanguageMenu() },
             )
         }
     ) { pad ->
@@ -94,8 +99,8 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                 onValueChange = vm::onUrlChange,
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
-                label = { Text("URL du dépôt git") },
-                placeholder = { Text("https://github.com/utilisateur/projet") },
+                label = { Text(stringResource(R.string.url_label)) },
+                placeholder = { Text(stringResource(R.string.url_placeholder)) },
                 singleLine = true,
                 shape = RoundedCornerShape(18.dp),
                 keyboardOptions = KeyboardOptions(
@@ -127,19 +132,19 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                             color = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(12.dp))
-                        Text("Compilation…")
+                        Text(stringResource(R.string.state_compiling))
                     } else {
                         // Pendant l'installation/téléchargement : spinner neutre.
                         CircularProgressIndicator(
                             Modifier.size(20.dp), strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Installation…")
+                        Text(stringResource(R.string.state_installing))
                     }
                 } else {
                     Icon(Icons.Filled.Bolt, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Compiler", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.btn_compile), style = MaterialTheme.typography.titleMedium)
                 }
             }
 
@@ -179,20 +184,19 @@ private fun ServerBanner(
 ) {
     when {
         state.serverReachable == null -> {
-            AssistChipRow("Connexion au serveur local…", null)
+            AssistChipRow(stringResource(R.string.server_connecting), null)
         }
         state.serverReachable == false -> {
             ElevatedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Serveur de build introuvable",
+                    Text(stringResource(R.string.server_not_found_title),
                         style = MaterialTheme.typography.titleMedium)
-                    Text("Première fois ? Installe tout en un clic. Sinon, démarre " +
-                         "le serveur, puis réessaie.",
+                    Text(stringResource(R.string.server_not_found_body),
                         style = MaterialTheme.typography.bodyMedium)
                     SetupButtons()
                     FilledTonalButton(onClick = onRetry) {
                         Icon(Icons.Filled.Refresh, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Réessayer")
+                        Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.btn_retry))
                     }
                 }
             }
@@ -200,20 +204,19 @@ private fun ServerBanner(
         !state.chainReady -> {
             ElevatedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Première configuration",
+                    Text(stringResource(R.string.first_setup_title),
                         style = MaterialTheme.typography.titleMedium)
-                    Text("Le serveur répond, mais la chaîne de compilation n'est " +
-                         "pas installée. Lance l'installation (une seule fois).",
+                    Text(stringResource(R.string.first_setup_body),
                         style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = onSetup) {
                         Icon(Icons.Filled.Bolt, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Installer la chaîne")
+                        Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.btn_install_chain))
                     }
                 }
             }
         }
         else -> {
-            AssistChipRow("Prêt à compiler", Icons.Filled.CheckCircle)
+            AssistChipRow(stringResource(R.string.ready_to_compile), Icons.Filled.CheckCircle)
         }
     }
 }
@@ -259,17 +262,17 @@ private fun ResultCard(
                     contentDescription = null, tint = onContainer)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (success) "Compilation réussie" else "Échec de la compilation",
+                    if (success) stringResource(R.string.build_success) else stringResource(R.string.build_failed),
                     style = MaterialTheme.typography.titleMedium, color = onContainer)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (success && apkUrl != null) {
                     Button(onClick = { onInstall(apkUrl) }) {
                         Icon(Icons.Filled.Download, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Installer l'APK")
+                        Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.btn_install_apk))
                     }
                 }
-                FilledTonalButton(onClick = onReset) { Text("Nouveau build") }
+                FilledTonalButton(onClick = onReset) { Text(stringResource(R.string.btn_new_build)) }
             }
         }
     }
@@ -290,7 +293,7 @@ private fun LogConsole(
     ) {
         if (lines.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Les logs du build s'afficheront ici",
+                Text(stringResource(R.string.logs_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -319,15 +322,15 @@ private fun LogConsole(
                     onClick = {
                         val cm = ctx.getSystemService(ClipboardManager::class.java)
                         cm?.setPrimaryClip(
-                            ClipData.newPlainText("logs Forge", lines.joinToString("\n")))
-                        Toast.makeText(ctx, "Logs copiés", Toast.LENGTH_SHORT).show()
+                            ClipData.newPlainText(ctx.getString(R.string.logs_clip_label), lines.joinToString("\n")))
+                        Toast.makeText(ctx, ctx.getString(R.string.logs_copied), Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
                         .size(36.dp),
                 ) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = "Copier les logs",
+                    Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.logs_copy_cd),
                         modifier = Modifier.size(18.dp))
                 }
             }
@@ -346,30 +349,29 @@ private fun SetupButtons() {
                 val script = readAsset(ctx, "forge-install.sh")
                 copyToClipboard(ctx, "forge-install", script)
                 val msg = openTermux(ctx)
-                toast(ctx, "Script d'installation copié. $msg")
+                toast(ctx, ctx.getString(R.string.toast_install_copied, msg))
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(Icons.Filled.Bolt, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Première installation (tout configurer)")
+            Text(stringResource(R.string.btn_first_install))
         }
         FilledTonalButton(
             onClick = {
                 val script = readAsset(ctx, "forge-start.sh")
                 copyToClipboard(ctx, "forge-start", script)
                 val msg = openTermux(ctx)
-                toast(ctx, "Script de démarrage copié. $msg")
+                toast(ctx, ctx.getString(R.string.toast_start_copied, msg))
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(Icons.Filled.Refresh, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Démarrer le serveur")
+            Text(stringResource(R.string.btn_start_server))
         }
         Text(
-            "Le script est copié dans le presse-papier. Dans Termux : appui long " +
-            "→ Coller → Entrée.",
+            stringResource(R.string.setup_clipboard_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -525,6 +527,45 @@ private fun ForgingHammer(
                 topLeft = Offset(headCenter.x - mhW / 2f, headCenter.y - mhH / 2f),
                 size = androidx.compose.ui.geometry.Size(mhW, mhH),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f * u, 4f * u),
+            )
+        }
+    }
+}
+
+/**
+ * Sélecteur de langue dans la barre du haut. Utilise l'API per-app locales
+ * d'AndroidX (AppCompatDelegate) : le choix est mémorisé par le système et
+ * applique aussitôt la langue (français, anglais, ou suivi du système).
+ */
+@Composable
+private fun LanguageMenu() {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Filled.Language,
+                contentDescription = stringResource(R.string.language_cd))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.language_system)) },
+                onClick = {
+                    expanded = false
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.language_french)) },
+                onClick = {
+                    expanded = false
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("fr"))
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.language_english)) },
+                onClick = {
+                    expanded = false
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
+                },
             )
         }
     }

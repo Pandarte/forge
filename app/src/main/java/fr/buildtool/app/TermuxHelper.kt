@@ -32,7 +32,7 @@ fun openTermux(ctx: Context): String {
     return if (launch != null) {
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         ctx.startActivity(launch)
-        "Termux ouvert. Colle le script (appui long → Coller) puis Entrée."
+        ctx.getString(R.string.termux_opened)
     } else {
         // Termux pas installe : diriger vers F-Droid (source recommandee)
         runCatching {
@@ -40,7 +40,7 @@ fun openTermux(ctx: Context): String {
                 Uri.parse("https://f-droid.org/packages/com.termux/"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
-        "Termux n'est pas installé. Installe-le depuis F-Droid, puis reviens."
+        ctx.getString(R.string.termux_not_installed)
     }
 }
 

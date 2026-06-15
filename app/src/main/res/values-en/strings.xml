@@ -1,0 +1,49 @@
+<resources>
+    <!-- Input -->
+    <string name="url_label">Git repository URL</string>
+    <string name="url_placeholder">https://github.com/user/project</string>
+
+    <!-- Main button -->
+    <string name="btn_compile">Build</string>
+    <string name="state_compiling">Building…</string>
+    <string name="state_installing">Installing…</string>
+
+    <!-- Server banner -->
+    <string name="server_connecting">Connecting to local server…</string>
+    <string name="server_not_found_title">Build server not found</string>
+    <string name="server_not_found_body">First time? Install everything in one tap. Otherwise start the server, then try again.</string>
+    <string name="btn_retry">Try again</string>
+    <string name="first_setup_title">First-time setup</string>
+    <string name="first_setup_body">The server responds, but the build toolchain isn\'t installed. Run the installation (one time only).</string>
+    <string name="btn_install_chain">Install toolchain</string>
+    <string name="ready_to_compile">Ready to build</string>
+
+    <!-- Result card -->
+    <string name="build_success">Build succeeded</string>
+    <string name="build_failed">Build failed</string>
+    <string name="btn_install_apk">Install APK</string>
+    <string name="btn_new_build">New build</string>
+
+    <!-- Log console -->
+    <string name="logs_placeholder">Build logs will appear here</string>
+    <string name="logs_clip_label">APKforge logs</string>
+    <string name="logs_copied">Logs copied</string>
+    <string name="logs_copy_cd">Copy logs</string>
+
+    <!-- Setup buttons -->
+    <string name="btn_first_install">First install (set everything up)</string>
+    <string name="btn_start_server">Start the server</string>
+    <string name="setup_clipboard_hint">The script is copied to the clipboard. In Termux: long-press → Paste → Enter.</string>
+    <string name="toast_install_copied">Install script copied. %1$s</string>
+    <string name="toast_start_copied">Start script copied. %1$s</string>
+
+    <!-- Termux -->
+    <string name="termux_not_installed">Termux isn\'t installed. Get it from F-Droid, then come back.</string>
+    <string name="termux_opened">Termux opened. Paste the script (long-press → Paste) then Enter.</string>
+
+    <!-- Language selector -->
+    <string name="language_cd">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_french">Français</string>
+    <string name="language_english">English</string>
+</resources>
