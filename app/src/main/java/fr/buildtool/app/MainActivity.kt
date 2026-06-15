@@ -17,6 +17,22 @@ import androidx.compose.ui.platform.LocalContext
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Quand la langue change, AppCompat recree l'activite. Par defaut la
+        // transition est seche (flash noir). On force un fondu enchaine pour que
+        // l'ancien et le nouvel ecran se croisent en douceur.
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_OPEN,
+                android.R.anim.fade_in, android.R.anim.fade_out,
+            )
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_CLOSE,
+                android.R.anim.fade_in, android.R.anim.fade_out,
+            )
+        } else {
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
         enableEdgeToEdge()
         setContent {
             ForgeTheme {
