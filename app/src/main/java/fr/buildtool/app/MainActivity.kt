@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.LocalContext
 class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: Context) {
+        // Capture les crashes le plus tot possible (ecrit filesDir/last_crash.txt).
+        CrashLogger.install(newBase)
         // Restaure la langue choisie avant d'attacher le contexte de base.
         LocaleManager.load(newBase)
         super.attachBaseContext(LocaleManager.wrap(newBase))
