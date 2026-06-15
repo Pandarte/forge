@@ -346,6 +346,10 @@ private fun ResultCard(
                     }
                     FilledTonalIconButton(
                         onClick = { exportLauncher.launch("APKforge.apk") },
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        ),
                     ) {
                         Icon(
                             Icons.Filled.Save,
@@ -353,7 +357,13 @@ private fun ResultCard(
                         )
                     }
                 }
-                FilledTonalButton(onClick = onReset) { Text(stringResource(R.string.btn_new_build)) }
+                FilledTonalButton(
+                    onClick = onReset,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    ),
+                ) { Text(stringResource(R.string.btn_new_build)) }
             }
         }
     }
