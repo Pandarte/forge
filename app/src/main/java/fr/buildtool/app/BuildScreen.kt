@@ -31,7 +31,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Save
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
@@ -272,7 +272,9 @@ private fun ResultCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = container),
         shape = RoundedCornerShape(22.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
     ) {
         val ctx = LocalContext.current
         val exportScope = rememberCoroutineScope()
@@ -309,9 +311,13 @@ private fun ResultCard(
                         Icon(Icons.Filled.Download, contentDescription = null)
                         Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.btn_install_apk))
                     }
-                    FilledTonalButton(onClick = { exportLauncher.launch("APKforge.apk") }) {
-                        Icon(Icons.Filled.SaveAlt, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.btn_export_apk))
+                    FilledTonalIconButton(
+                        onClick = { exportLauncher.launch("APKforge.apk") },
+                    ) {
+                        Icon(
+                            Icons.Filled.Save,
+                            contentDescription = stringResource(R.string.btn_export_apk),
+                        )
                     }
                 }
                 FilledTonalButton(onClick = onReset) { Text(stringResource(R.string.btn_new_build)) }
