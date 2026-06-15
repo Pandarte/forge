@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Couleur de fond de l'icône (fallback Android 8-11, pas de couleurs dynamiques) -->
-    <color name="ic_launcher_background">#2C2A33</color>
+    <!-- Couleur de fond de secours (fallback). Le vrai fond est le drawable
+         @drawable/ic_launcher_background (teal + grille). -->
+    <color name="ic_launcher_background">#26A69A</color>
 </resources>
