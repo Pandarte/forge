@@ -49,9 +49,12 @@
     <string name="language_french">Français</string>
     <string name="language_english">English</string>
 
-    <!-- Theme Material3 ; les couleurs viennent dynamiquement (Material You)
-         depuis le code, ce theme ne fixe que les bases pour le splash. -->
-    <style name="Theme.Forge" parent="android:Theme.Material.NoActionBar">
+    <!-- Theme AppCompat (requis par AppCompatActivity, qui applique les
+         per-app locales). Les couleurs UI viennent dynamiquement de Compose ;
+         ce theme ne fixe que les bases (splash, barres transparentes). -->
+    <style name="Theme.Forge" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
