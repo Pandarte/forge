@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -61,6 +62,7 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
     val scroll = rememberScrollState()
+    val installScope = rememberCoroutineScope()
 
     // auto-scroll des logs vers le bas quand ils grandissent
     LaunchedEffect(state.logLines.size) {
@@ -89,6 +91,8 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            CrashCard()
+
             ServerBanner(state, onSetup = vm::runSetup, onRetry = vm::checkServer)
 
             // --- Saisie URL ---
@@ -156,7 +160,21 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                     status = state.buildStatus,
                     apkUrl = state.apkReadyUrl,
                     onInstall = { url ->
-                        ctx.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                        installScope.launch {
+                            val apk = ApkInstaller.download(ctx, url)
+                            if (apk != null) {
+                                runCatching { ApkInstaller.install(ctx, apk) }
+                                    .onFailure {
+                                        Toast.makeText(ctx,
+                                            ctx.getString(R.string.install_failed),
+                                            Toast.LENGTH_LONG).show()
+                                    }
+                            } else {
+                                Toast.makeText(ctx,
+                                    ctx.getString(R.string.install_download_failed),
+                                    Toast.LENGTH_LONG).show()
+                            }
+                        }
                     },
                     onReset = vm::reset,
                 )
@@ -566,6 +584,53 @@ private fun LanguageMenu() {
                     LocaleManager.set(ctx, "en")
                 },
             )
+        }
+    }
+}
+
+/**
+ * Affiche le dernier crash enregistre (s'il y en a un), avec boutons Copier et
+ * Effacer. Sert a recuperer facilement la stacktrace pour diagnostiquer un bug.
+ */
+@Composable
+private fun CrashCard() {
+    val ctx = LocalContext.current
+    var crash by remember { mutableStateOf(CrashLogger.lastCrash(ctx)) }
+    val text = crash ?: return
+
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+        ),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.ErrorOutline, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer)
+                Spacer(Modifier.width(8.dp))
+                Text("Dernier crash détecté",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+            Text(
+                text.take(1500),
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(onClick = {
+                    val clip = ctx.getSystemService(ClipboardManager::class.java)
+                    clip?.setPrimaryClip(ClipData.newPlainText("APKforge crash", text))
+                    Toast.makeText(ctx, "Crash copié", Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null)
+                    Spacer(Modifier.width(8.dp)); Text("Copier")
+                }
+                TextButton(onClick = {
+                    CrashLogger.clear(ctx); crash = null
+                }) { Text("Effacer") }
+            }
         }
     }
 }
