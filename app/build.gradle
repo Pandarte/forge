@@ -8,12 +8,20 @@ android {
     namespace 'fr.buildtool.app'
     compileSdk 36
 
+    // ===== VERSION DE L'APP =====================================================
+    // A INCREMENTER a chaque nouvelle APK pour eviter les conflits d'installation :
+    //   - APP_VERSION_CODE : entier, +1 a chaque build distribue (obligatoire).
+    //   - APP_VERSION_NAME : version lisible affichee a l'utilisateur (ex 1.1).
+    // ============================================================================
+    def APP_VERSION_CODE = 9
+    def APP_VERSION_NAME = "1.1"
+
     defaultConfig {
         applicationId "fr.buildtool.app"
         minSdk 26
         targetSdk 36
-        versionCode 8
-        versionName "1.0"
+        versionCode APP_VERSION_CODE
+        versionName APP_VERSION_NAME
     }
 
     buildTypes {
