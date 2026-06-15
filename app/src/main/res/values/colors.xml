@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fond de fenetre pendant la (re)creation de l'activite : evite le flash
+         noir lors du changement de langue. Tons neutres proches du fond Material. -->
+    <color name="window_background">#FDFBFF</color>
+</resources>
