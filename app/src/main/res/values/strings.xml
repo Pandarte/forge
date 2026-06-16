@@ -7,6 +7,8 @@
 
     <!-- Bouton principal -->
     <string name="btn_compile">Compiler</string>
+    <string name="mem_label">Mémoire allouée à la compilation</string>
+    <string name="mem_default">Défaut</string>
     <string name="state_compiling">Compilation…</string>
     <string name="state_installing">Installation…</string>
 

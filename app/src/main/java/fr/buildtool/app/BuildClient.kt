@@ -72,13 +72,15 @@ class BuildClient(
     /** Lance un build, renvoie le job_id ou null. */
     suspend fun startBuild(
         url: String, branch: String = "", subdir: String = "",
-        task: String = "assembleDebug",
+        task: String = "assembleDebug", memMb: Int = 0,
     ): String? = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
             put("url", url)
             if (branch.isNotEmpty()) put("branch", branch)
             if (subdir.isNotEmpty()) put("subdir", subdir)
             put("task", task)
+            // Heap Gradle en Mo (0 = laisser le defaut du serveur).
+            if (memMb > 0) put("mem", memMb)
         }.toString().toRequestBody(json)
         runCatching {
             http.newCall(req("/build").post(body).build()).execute().use { r ->

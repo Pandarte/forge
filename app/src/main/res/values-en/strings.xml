@@ -5,6 +5,8 @@
 
     <!-- Main button -->
     <string name="btn_compile">Build</string>
+    <string name="mem_label">Memory allocated to the build</string>
+    <string name="mem_default">Default</string>
     <string name="state_compiling">Building…</string>
     <string name="state_installing">Installing…</string>
 

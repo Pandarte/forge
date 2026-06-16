@@ -21,6 +21,7 @@ data class UiState(
     val currentJob: String? = null,
     val buildStatus: String? = null,        // running | success | failed
     val apkReadyUrl: String? = null,
+    val memMb: Int = 0,                      // heap Gradle en Mo ; 0 = defaut serveur
 ) {
     enum class Phase { IDLE, CONNECTING, SETUP, BUILDING, DONE }
 }
@@ -36,6 +37,9 @@ class BuildViewModel : ViewModel() {
     init { checkServer() }
 
     fun onUrlChange(v: String) { _state.value = _state.value.copy(url = v) }
+
+    /** Regle l'allocation memoire (heap Gradle, en Mo ; 0 = defaut serveur). */
+    fun setMem(mb: Int) { _state.value = _state.value.copy(memMb = mb) }
 
     /** Teste la connexion au serveur local et l'etat de la chaine. */
     fun checkServer() {
@@ -73,7 +77,7 @@ class BuildViewModel : ViewModel() {
         val url = _state.value.url.trim()
         if (url.isEmpty()) return
         viewModelScope.launch {
-            val jid = client.startBuild(url) ?: run {
+            val jid = client.startBuild(url, memMb = _state.value.memMb) ?: run {
                 _state.value = _state.value.copy(
                     logLines = listOf("Impossible de joindre le serveur de build."),
                     buildStatus = "failed", phase = UiState.Phase.DONE,
