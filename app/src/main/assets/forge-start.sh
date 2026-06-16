@@ -8,16 +8,19 @@ set -u
 
 echo "=== Forge - demarrage rapide ==="
 
-# verifie que Ubuntu existe (test robuste : dossier rootfs, independant des
+# Proot a utiliser pour la compilation (Debian minimal).
+DISTRO="debian"
+
+# verifie que le proot existe (test robuste : dossier rootfs, independant des
 # options de proot-distro qui varient selon les versions)
-UBUNTU_ROOT="$PREFIX/var/lib/proot-distro/containers/ubuntu"
-if [ ! -d "$UBUNTU_ROOT" ]; then
-    echo "ERREUR: Ubuntu n'est pas installe."
-    echo "Lance d'abord le script d'installation complete."
+DISTRO_ROOT="$PREFIX/var/lib/proot-distro/containers/$DISTRO"
+if [ ! -d "$DISTRO_ROOT" ]; then
+    echo "ERREUR: le proot '$DISTRO' n'est pas installe."
+    echo "Lance d'abord le script d'installation complete (bootstrap-debian-build.sh)."
     exit 1
 fi
 
-# sous-script execute dans Ubuntu : verifie/repare la chaine, puis sert
+# sous-script execute dans le proot : verifie/repare la chaine, puis sert
 INNER="/data/data/com.termux/files/home/.forge-start-inner.sh"
 cat > "$INNER" <<'INNEREOF'
 #!/bin/bash
@@ -67,4 +70,4 @@ exec python3 "$SERVER"
 INNEREOF
 chmod +x "$INNER"
 
-exec proot-distro login ubuntu -- bash "$INNER"
+exec proot-distro login "$DISTRO" -- bash "$INNER"
