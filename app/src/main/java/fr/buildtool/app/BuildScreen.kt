@@ -435,7 +435,7 @@ private fun LogConsole(
                         .verticalScroll(scroll)
                         .padding(14.dp),
                 ) {
-                    lines.forEach { line ->
+                    displayLines(lines).forEach { line ->
                         Text(
                             line,
                             fontFamily = FontFamily.Monospace,
@@ -468,8 +468,20 @@ private fun LogConsole(
     }
 }
 
-/** Deux boutons de configuration : install complete / demarrage rapide.
- *  Chaque bouton copie le script correspondant et tente d'ouvrir Termux. */
+/**
+ * Transforme les lignes de log pour l'AFFICHAGE uniquement (le log brut servant
+ * a la copie reste inchange).
+ *
+ * Remplace l'espace qui suit un ">" en debut de ligne par un espace insecable
+ * (U+00A0), pour que le retour a la ligne automatique ne separe jamais le ">"
+ * du mot qui le suit (typiquement "Task").
+ */
+private fun displayLines(lines: List<String>): List<String> =
+    lines.map { line ->
+        if (line.startsWith("> ")) ">\u00A0" + line.substring(2) else line
+    }
+
+
 @Composable
 private fun SetupButtons() {
     val ctx = LocalContext.current
