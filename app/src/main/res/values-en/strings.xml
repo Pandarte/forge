@@ -17,6 +17,8 @@
     <string name="first_setup_body">The server responds, but the build toolchain isn\'t installed. Run the installation (one time only).</string>
     <string name="btn_install_chain">Install toolchain</string>
     <string name="ready_to_compile">Ready to build</string>
+    <string name="chain_native">native</string>
+    <string name="chain_proot">proot</string>
 
     <!-- Result card -->
     <string name="build_success">Build succeeded</string>

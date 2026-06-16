@@ -14,6 +14,8 @@ data class ChainStatus(
     val chainReady: Boolean,
     val builderPresent: Boolean,
     val sdkPresent: Boolean,
+    val nativeReady: Boolean = false,
+    val prootReady: Boolean = false,
 )
 
 /** Resultat d'un poll de logs. */
@@ -60,6 +62,8 @@ class BuildClient(
                     chainReady = o.optBoolean("chain_ready"),
                     builderPresent = o.optBoolean("builder_present"),
                     sdkPresent = o.optBoolean("sdk_present"),
+                    nativeReady = o.optBoolean("native_ready"),
+                    prootReady = o.optBoolean("proot_ready"),
                 )
             }
         }.getOrNull()

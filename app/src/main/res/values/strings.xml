@@ -19,6 +19,8 @@
     <string name="first_setup_body">Le serveur répond, mais la chaîne de compilation n\'est pas installée. Lance l\'installation (une seule fois).</string>
     <string name="btn_install_chain">Installer la chaîne</string>
     <string name="ready_to_compile">Prêt à compiler</string>
+    <string name="chain_native">natif</string>
+    <string name="chain_proot">proot</string>
 
     <!-- Carte de résultat -->
     <string name="build_success">Compilation réussie</string>

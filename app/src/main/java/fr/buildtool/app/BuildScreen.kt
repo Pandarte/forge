@@ -24,6 +24,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
@@ -266,7 +269,31 @@ private fun ServerBanner(
             }
         }
         else -> {
-            AssistChipRow(stringResource(R.string.ready_to_compile), Icons.Filled.CheckCircle)
+            // Pret : on indique aussi quelle chaine sera utilisee.
+            val chainLabel = when {
+                state.nativeReady -> stringResource(R.string.chain_native)
+                state.prootReady -> stringResource(R.string.chain_proot)
+                else -> null
+            }
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChipRow(stringResource(R.string.ready_to_compile),
+                    Icons.Filled.CheckCircle)
+                if (chainLabel != null) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(chainLabel) },
+                        leadingIcon = {
+                            Icon(
+                                if (state.nativeReady) Icons.Filled.Bolt
+                                else Icons.Filled.Layers,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                    )
+                }
+            }
         }
     }
 }

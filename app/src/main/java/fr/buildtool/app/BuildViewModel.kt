@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 data class UiState(
     val serverReachable: Boolean? = null,   // null = pas encore teste
     val chainReady: Boolean = false,
+    val nativeReady: Boolean = false,
+    val prootReady: Boolean = false,
     val url: String = "",
     val phase: Phase = Phase.IDLE,
     val logLines: List<String> = emptyList(),
@@ -46,6 +48,8 @@ class BuildViewModel : ViewModel() {
                 _state.value.copy(
                     serverReachable = true,
                     chainReady = st.chainReady,
+                    nativeReady = st.nativeReady,
+                    prootReady = st.prootReady,
                     phase = UiState.Phase.IDLE,
                 )
             }
